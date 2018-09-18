@@ -402,7 +402,6 @@ fun IrValueParameter.copy(newDescriptor: ParameterDescriptor): IrValueParameter 
     )
 }
 
-
 fun createField(
     startOffset: Int,
     endOffset: Int,
