@@ -14,8 +14,10 @@ import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
 import org.jetbrains.kotlin.ir.declarations.IrFile
 import org.jetbrains.kotlin.ir.declarations.IrProperty
+import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
 import org.jetbrains.kotlin.ir.declarations.lazy.LazyScopedTypeParametersResolver
 import org.jetbrains.kotlin.ir.expressions.IrCall
+import org.jetbrains.kotlin.ir.expressions.IrConst
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.impl.IrGetFieldImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrSetFieldImpl
@@ -50,6 +52,12 @@ class ConstAndJvmFieldPropertiesLowering(val context: JvmBackendContext) : IrEle
     }
 
     override fun visitCall(expression: IrCall): IrExpression {
+        val irProperty = (expression.symbol.owner as? IrSimpleFunction)?.correspondingProperty ?: return super.visitCall(expression)
+
+        if (irProperty.isConst) {
+            (irProperty.backingField?.initializer?.expression as? IrConst<*>)?.let { return it }
+        }
+
         val descriptor = expression.descriptor as? PropertyAccessorDescriptor ?: return super.visitCall(expression)
 
         val property = descriptor.correspondingProperty
@@ -80,23 +88,14 @@ class ConstAndJvmFieldPropertiesLowering(val context: JvmBackendContext) : IrEle
     }
 
     private fun substituteGetter(descriptor: PropertyGetterDescriptor, expression: IrCall): IrExpression {
-        val propertyDescriptor = descriptor.correspondingProperty
-        if (propertyDescriptor.isConst && propertyDescriptor.compileTimeInitializer != null) {
-            return constantValueGenerator
-                .generateConstantValueAsExpression(
-                    UNDEFINED_OFFSET, UNDEFINED_OFFSET,
-                    propertyDescriptor.compileTimeInitializer!!
-                )
-        } else {
-            return IrGetFieldImpl(
-                expression.startOffset,
-                expression.endOffset,
-                context.ir.symbols.externalSymbolTable.referenceField(descriptor.correspondingProperty),
-                expression.type,
-                expression.dispatchReceiver,
-                expression.origin,
-                expression.superQualifier?.let { context.ir.symbols.externalSymbolTable.referenceClass(it) }
-            )
-        }
+        return IrGetFieldImpl(
+            expression.startOffset,
+            expression.endOffset,
+            context.ir.symbols.externalSymbolTable.referenceField(descriptor.correspondingProperty),
+            expression.type,
+            expression.dispatchReceiver,
+            expression.origin,
+            expression.superQualifier?.let { context.ir.symbols.externalSymbolTable.referenceClass(it) }
+        )
     }
 }
