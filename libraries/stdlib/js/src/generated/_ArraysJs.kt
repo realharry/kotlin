@@ -10,12 +10,8 @@ package kotlin.collections
 // See: https://github.com/JetBrains/kotlin/tree/master/libraries/stdlib
 //
 
-import kotlin.js.*
 import primitiveArrayConcat
 import withType
-import kotlin.*
-import kotlin.text.*
-import kotlin.comparisons.*
 
 /**
  * Returns a [List] that wraps the original array.

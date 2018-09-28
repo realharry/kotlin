@@ -10,10 +10,6 @@ package kotlin.collections
 // See: https://github.com/JetBrains/kotlin/tree/master/libraries/stdlib
 //
 
-import kotlin.js.*
-import kotlin.*
-import kotlin.text.*
-import kotlin.comparisons.*
 
 /**
  * Reverses elements in the list in-place.
